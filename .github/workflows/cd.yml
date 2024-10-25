@@ -1,0 +1,34 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Deploy to server
+        env:
+          DATABASE_URL: postgres://user:password@localhost/mydatabase
+          SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+        run: |
+          echo "$SERVER_SSH_KEY" > key.pem
+          chmod 600 key.pem
+          ssh -i key.pem $SERVER_USER@$SERVER_IP 'bash -s' < ./deploy_script.sh
